@@ -1,0 +1,275 @@
+    list p=16f877a,
+    #include <p16f877a.inc>
+    
+PA  equ 0x05
+PB  equ	0x06
+PC  equ	0x07
+conteo	equ 0x20
+aforo	equ 0x21
+cero	equ 0x22
+datos	equ 0x23
+decenas	equ 0x24
+unidades    equ	0x25
+UNO	equ 0x26
+DOS	equ 0x27
+TRES	equ 0x28
+CUATRO	equ 0x29
+CINCO	equ 0x2A
+SEIS	equ 0x2B
+SIETE	equ 0x2C
+OCHO	equ 0x2D
+NUEVE	equ 0x2E
+TRA equ	0x85
+TRB equ	0x86
+tiempo1	equ 0x21
+tiempo2	equ 0x22
+
+RESET ORG   0X00
+ goto	main
+ 
+main
+    bsf	STATUS,5
+    movlw   b'00000000'
+    movwf   TRB
+    movlw   b'000011'
+    movwf   TRA
+    movlw   b'00000000'
+    movwf   TRISC
+    movlw   b'00000110'
+    movwf   ADCON1
+    bcf	STATUS,5
+    clrf    PB
+    clrf    PC
+    clrf    conteo
+    movlw   .25
+    movwf   aforo
+    clrf    cero
+    movlw   0x00
+    goto    lectura
+
+;retardo
+;   movlw    .100
+;   movwf    tiempo1
+;lee2   movlw    .255
+;   movwf    tiempo2
+;lee1   decfsz   tiempo2,1
+;   goto	lee1
+;   decfsz   tiempo1,1
+;   goto	lee2
+;   return
+    
+lectura
+    clrf    decenas
+lee_incr	 btfsc   PA,0
+    goto    lee_decr
+    goto    lee_incr2
+   
+lee_decr	btfsc	PA,1
+    goto    lectura 
+    goto    lee_decr2
+   
+lee_incr2   btfss   PA,0
+    goto    lee_incr2
+    goto    incrementador
+   
+lee_decr2   btfss   PA,1
+    goto    lee_decr2
+    goto    decrementador
+   
+incrementador
+    movfw   aforo   ;w=aforo=5
+    xorwf   conteo,0	;si es igual z=1, diferentes z=0
+    btfsc   STATUS,Z
+    goto    limite    
+    incfsz  conteo,1
+    movfw   conteo  ;w=conteo
+    movwf   datos
+    goto    mostrar
+
+decrementador
+    movfw   aforo   ;w=aforo=5
+    xorwf   conteo,0	;si es igual z=1, diferente z=0
+    btfss   STATUS,Z	;son iguales?
+    goto    ceroK
+    goto    menos
+
+limite	;limite del aforo no mincrementa
+    movfw   aforo   ;w=aforo
+    goto    rojo
+
+
+ceroK
+    movfw   cero;   w=cero
+    xorwf   conteo  ;si iguales z=1, diferente z=0
+    btfss   STATUS,Z
+    goto    menos
+    goto    lectura
+menos
+    decfsz  conteo,1
+    movfw   conteo  ;w=conteo
+    movwf   datos
+    goto    mostrar
+
+mostrar
+    movlw   .10
+    subwf   datos,0
+    btfss   STATUS,C	;positivo c=1, negativo c=0
+    goto    negativo
+    
+Incrementar_decenas
+    movwf   datos
+    incfsz  decenas,1
+    movlw   .10
+    subwf   decenas,0
+    btfss   STATUS,C
+    goto    mostrar
+    
+negativo
+    movfw   datos
+    movwf   unidades
+    goto    mostrar_en_display
+    
+mostrar_en_display
+    movlw   0x00
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x3F
+    btfsc   STATUS,Z
+    goto    a_puertos  
+    
+    movlw   0x01
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x06
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x02
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x5B
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x03
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x4F
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x04
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x66
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x05
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x6D
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x06
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x7D
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x07
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x07   ;SIETE
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x08
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x7F    ;OCHO
+    btfsc   STATUS,Z
+    goto    a_puertos 
+    
+    movlw   0x09
+    xorwf   decenas,0	;si iguales z=1, diferentes z=0
+    movlw   0x6F    ;NUEVE
+    btfsc   STATUS,Z
+    goto    a_puertos 
+  
+mostrar_en_display2
+    movlw   0x00
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x3F
+    btfsc   STATUS,Z
+    goto    a_puertos2  
+    
+    movlw   0x01
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x06
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x02
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x5B
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x03
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x4F
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x04
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x66
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x05
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x6D
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x06
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x7D
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x07
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x07   ;SIETE
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x08
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x7F    ;OCHO
+    btfsc   STATUS,Z
+    goto    a_puertos2 
+    
+    movlw   0x09
+    xorwf   unidades,0	;si iguales z=1, diferentes z=0
+    movlw   0x6F    ;NUEVE
+    btfsc   STATUS,Z
+    goto    a_puertos2    
+     
+a_puertos
+    movwf   PB
+    goto    mostrar_en_display2
+        
+a_puertos2
+    movwf   PC
+    movfw   conteo  ;w=conteo
+    xorwf   aforo,0
+    btfsc   STATUS,Z
+    goto    rojo
+    goto    verde
+
+rojo
+    movlw   b'001000'
+    movwf   PA
+    goto    lectura
+    
+verde
+    movlw   b'100000'
+    movwf   PA
+       goto    lectura
+    END
